@@ -57,7 +57,7 @@ export default function Login() {
         >
           Entrar na sua conta
         </h1>
-        <p style={{ fontSize: 13.5, color: "#6B7A96", margin: "0 0 22px" }}>
+        <p style={{ fontSize: 13.5, color: "#54627F", margin: "0 0 22px" }}>
           Acesse o seu Mapa de Recomeço. Seus dados ficam protegidos e criptografados.
         </p>
 
@@ -129,7 +129,7 @@ export default function Login() {
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0" }}>
           <div style={{ flex: 1, height: 1, background: "rgba(19,35,63,.1)" }} />
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: "#8A97AE", textTransform: "uppercase", letterSpacing: ".08em" }}>
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: "#657493", textTransform: "uppercase", letterSpacing: ".08em" }}>
             Entrar como demonstração
           </span>
           <div style={{ flex: 1, height: 1, background: "rgba(19,35,63,.1)" }} />
@@ -153,7 +153,7 @@ export default function Login() {
             </span>
             <span style={{ textAlign: "left", lineHeight: 1.3 }}>
               <strong style={{ display: "block", fontSize: 14, color: "#13233F" }}>Marina — usuária</strong>
-              <span style={{ fontSize: 12, color: "#6B7A96" }}>ver o Painel do usuário</span>
+              <span style={{ fontSize: 12, color: "#54627F" }}>ver o Painel do usuário</span>
             </span>
           </button>
           <button
@@ -173,7 +173,7 @@ export default function Login() {
             </span>
             <span style={{ textAlign: "left", lineHeight: 1.3 }}>
               <strong style={{ display: "block", fontSize: 14, color: "#13233F" }}>Dr. Leandro — advogado</strong>
-              <span style={{ fontSize: 12, color: "#6B7A96" }}>ver o Painel do advogado</span>
+              <span style={{ fontSize: 12, color: "#54627F" }}>ver o Painel do advogado</span>
             </span>
           </button>
         </div>
@@ -191,7 +191,7 @@ export default function Login() {
             cursor: "pointer",
             background: "none",
             border: "none",
-            color: "#6B7A96",
+            color: "#54627F",
           }}
         >
           <Icon name="arrowLeft" size={15} strokeWidth={2.75} />

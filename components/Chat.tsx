@@ -185,7 +185,7 @@ export default function Chat() {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontWeight: 800, fontSize: 15 }}>Clara</div>
-            <div style={{ fontSize: 11.5, color: "#6B7A96" }}>
+            <div style={{ fontSize: 11.5, color: "#54627F" }}>
               assistente digital · não sou humana · decisões jurídicas passam por um advogado
             </div>
           </div>

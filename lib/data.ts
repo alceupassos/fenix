@@ -238,8 +238,8 @@ export const reclamacoes: Reclamacao[] = [
     etapas: [
       { nome: "Reclamação enviada", data: "28/07", barra: barOn, cor: "#0C6E6E" },
       { nome: "Recebida pela empresa", data: "29/07", barra: barOn, cor: "#0C6E6E" },
-      { nome: "Resposta da empresa", data: "até 15/08", barra: barOff, cor: "#8A97AE" },
-      { nome: "Análise da resposta", data: "—", barra: barOff, cor: "#8A97AE" },
+      { nome: "Resposta da empresa", data: "até 15/08", barra: barOff, cor: "#657493" },
+      { nome: "Análise da resposta", data: "—", barra: barOff, cor: "#657493" },
     ],
   },
   {

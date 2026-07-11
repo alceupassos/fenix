@@ -315,9 +315,17 @@ function Hero() {
                     fontWeight: 800,
                     fontSize: 17,
                     color: "#fff",
+                    overflow: "hidden",
+                    position: "relative",
                   }}
                 >
-                  C
+                  <Image
+                    src="/brand/clara-mark.jpg"
+                    alt=""
+                    width={40}
+                    height={40}
+                    style={{ width: 40, height: 40, objectFit: "cover" }}
+                  />
                 </div>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: 14.5 }}>Clara</div>
@@ -414,7 +422,7 @@ function ContextStrip() {
               <div className="font-display" style={{ fontWeight: 800, fontSize: 26, color: "#12A5A5" }}>
                 {n}
               </div>
-              <div style={{ fontSize: 12.5, color: "#6B7A96", fontWeight: 600 }}>{l}</div>
+              <div style={{ fontSize: 12.5, color: "#54627F", fontWeight: 600 }}>{l}</div>
             </div>
           ))}
         </div>
@@ -502,7 +510,7 @@ function Situacoes() {
             <span style={{ fontWeight: 800, fontSize: 15.5, lineHeight: 1.3, color: "#13233F" }}>
               {s.titulo}
             </span>
-            <span style={{ fontSize: 13, color: "#6B7A96", lineHeight: 1.5 }}>{s.desc}</span>
+            <span style={{ fontSize: 13, color: "#54627F", lineHeight: 1.5 }}>{s.desc}</span>
           </Link>
         ))}
       </div>
@@ -561,7 +569,7 @@ function ComoFunciona() {
                 {p.n}
               </div>
               <strong style={{ fontSize: 15.5, lineHeight: 1.3 }}>{p.titulo}</strong>
-              <p style={{ fontSize: 13.5, margin: 0, color: "#6B7A96", lineHeight: 1.55 }}>{p.desc}</p>
+              <p style={{ fontSize: 13.5, margin: 0, color: "#54627F", lineHeight: 1.55 }}>{p.desc}</p>
             </div>
           ))}
         </div>
@@ -582,7 +590,7 @@ function ComoFunciona() {
               fontWeight: 800,
               letterSpacing: ".1em",
               textTransform: "uppercase",
-              color: "#6B7A96",
+              color: "#54627F",
               marginRight: 8,
             }}
           >
@@ -602,7 +610,7 @@ function ComoFunciona() {
               }}
             >
               <strong style={{ color: "#0C6E6E" }}>{ag.nome}</strong>
-              <span style={{ color: "#6B7A96" }}>{ag.papel}</span>
+              <span style={{ color: "#54627F" }}>{ag.papel}</span>
             </span>
           ))}
         </div>
@@ -752,7 +760,7 @@ function Planos() {
             </div>
             <div className="font-display" style={{ fontWeight: 800, fontSize: 36, letterSpacing: "-.02em" }}>
               {pl.preco}
-              <span style={{ fontSize: 15, fontFamily: "var(--font-body)", fontWeight: 600, color: "#6B7A96" }}>
+              <span style={{ fontSize: 15, fontFamily: "var(--font-body)", fontWeight: 600, color: "#54627F" }}>
                 {pl.periodo}
               </span>
             </div>
@@ -800,7 +808,7 @@ function Planos() {
               style={{
                 fontSize: 11.5,
                 textAlign: "center",
-                color: "#8A97AE",
+                color: "#657493",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -813,7 +821,7 @@ function Planos() {
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 12.5, marginTop: 24, color: "#8A97AE", maxWidth: "86ch", lineHeight: 1.6 }}>
+      <p style={{ fontSize: 12.5, marginTop: 24, color: "#657493", maxWidth: "86ch", lineHeight: 1.6 }}>
         Serviços privativos de advocacia — análise jurídica individualizada, petições, representação
         — são contratados diretamente com a advocacia parceira, mediante análise do caso, proposta de
         honorários e contrato próprio, conforme as regras da OAB.
@@ -839,7 +847,7 @@ function CtaFinal() {
       >
         &ldquo;Eu estava perdido e foi ali que consegui começar a colocar minha vida em ordem.&rdquo;
       </p>
-      <p style={{ fontSize: 14, color: "#6B7A96", margin: "0 0 28px" }}>
+      <p style={{ fontSize: 14, color: "#54627F", margin: "0 0 28px" }}>
         É isso que queremos ouvir de cada pessoa que passa pela Fênix.
       </p>
       <Link
@@ -882,8 +890,8 @@ function Footer() {
           </p>
         </div>
         {[
-          ["Caminhos", [["#situacoes", "Situações atendidas"], ["#como-funciona", "Como funciona"], ["#planos", "Planos"]]],
-          ["Confiança", [["#seguranca", "Privacidade e LGPD"], ["#seguranca", "Canal de privacidade"], ["#seguranca", "Advocacia parceira"]]],
+          ["Caminhos", [["#situacoes", "Situações atendidas"], ["#como-funciona", "Como funciona"], ["#planos", "Planos"], ["/nucleos", "Núcleos de serviço"]]],
+          ["Confiança", [["/privacidade", "Privacidade e LGPD"], ["#seguranca", "Segurança"], ["#seguranca", "Advocacia parceira"]]],
         ].map(([title, links]) => (
           <div
             key={title as string}

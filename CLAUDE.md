@@ -43,7 +43,8 @@ Two things coexist here:
 ## Build plan
 
 The implementation plan (phases, architecture, verification) is at
-`~/.claude/plans/compressed-painting-falcon.md`. Summary:
+`~/.claude/plans/compressed-painting-falcon.md`. Master orchestration prompt: `promptgrok.md`.
+Summary:
 - **Phase 1** — pixel-faithful frontend of all 5 screens (landing, chat/Clara, urgente, painel do
   usuário, painel do advogado) with mock data.
 - **Phase 2** — real Clara AI via `app/api/chat/route.ts`, provider-agnostic, **default Grok**
@@ -68,6 +69,19 @@ The implementation plan (phases, architecture, verification) is at
     Pacote R$ 149 one-time), `POST /api/stripe/webhook` (records purchases via `recordSubscription`).
     The Assinatura CTA uses `components/PlanoCheckoutButton.tsx`. **Stripe keys are pending** — set
     `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`; until then checkout falls back to `/login`.
+- **Phase 5 (Ondas 1–5 · promptgrok)** — ✅ Agentes + núcleos + plataforma base.
+  - **`lib/agents/`** (todos com faixa + audit): Clara (chat) · Farol · Atlas · Íris · **Acordo** ·
+    **Oficina** · **Ponte** · **Vigia** · **Aurora** · **Defensor** · **Superendividamento** · **Escudo**.
+  - **APIs agentes:** `/api/agents/{farol,atlas,iris,acordo,oficina,ponte,vigia,aurora,defensor,super,escudo}`.
+  - **Botão Fênix real:** `POST /api/fenix/button` (só `role=advogado`) + `lib/fenix-button.ts` + trilha
+    `lib/audit.ts` (`GET /api/audit`). UI em `components/Advogado.tsx` com 6 ações.
+  - **UI:** Painel + Recharts; `/nucleos` hub (super/acordo/defensor/ponte/escudo/oficina);
+    `/privacidade` LGPD; `/urgente` Farol; Cofre Íris; `GET /api/health`; `POST /api/upload` (stub cofre).
+  - **Íris PDF:** extração heurística de strings (PDF com texto); imagem → 422 até OCR dedicado.
+  - **CI:** `.github/workflows/ci.yml` (typecheck + `test:agents` + build).
+  - **Brand:** `public/brand/`. **Smoke:** `npm run test:agents`.
+  - **Ainda futuro (não bloqueia MVP):** OCR de imagem (Tesseract/cloud), S3 cofre criptografado,
+    envio real WhatsApp/e-mail do Vigia, 2FA TOTP, B2B2C multi-tenant, rede nacional de advogados.
 
 ## Deploy — ✅ NO AR em https://fenix.angra.io
 

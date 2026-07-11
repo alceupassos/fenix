@@ -1,12 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import { Icon } from "@/components/Icon";
 import LogoutButton from "@/components/LogoutButton";
 import { casosData, advTabs, cronologia, analise, fontes, type Caso } from "@/lib/data";
+import type { FenixAction, FenixDecision } from "@/lib/fenix-button";
 
 type AdvTab = "resumo" | "analise" | "minuta";
+
+const ACTION_BTNS: { action: FenixAction; label: string; primary?: boolean; urgent?: boolean }[] = [
+  { action: "aprovar", label: "Aprovar e prosseguir", primary: true },
+  { action: "aprovar_com_alteracoes", label: "Editar e aprovar" },
+  { action: "solicitar_documentos", label: "Solicitar documentos" },
+  { action: "encaminhar_humano", label: "Assumir atendimento" },
+  { action: "marcar_urgente", label: "Marcar como urgente", urgent: true },
+  { action: "rejeitar", label: "Rejeitar medida", urgent: true },
+];
 
 export default function Advogado({
   nome = "Dr. Leandro Giannasi",
@@ -19,18 +29,55 @@ export default function Advogado({
 }) {
   const [caseIdx, setCaseIdx] = useState(0);
   const [tab, setTab] = useState<AdvTab>("resumo");
-  const [aprovado, setAprovado] = useState(false);
+  const [decision, setDecision] = useState<FenixDecision | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [history, setHistory] = useState<FenixDecision[]>([]);
   const caso = casos[caseIdx];
+  const caseId = `case-${caseIdx}-${caso.nome.replace(/\s/g, "")}`;
 
   const openCase = (i: number) => {
     setCaseIdx(i);
     setTab("resumo");
-    setAprovado(false);
+    setDecision(null);
+    setErr(null);
+    setHistory([]);
   };
+
+  const runAction = useCallback(
+    async (action: FenixAction) => {
+      setBusy(true);
+      setErr(null);
+      try {
+        const res = await fetch("/api/fenix/button", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            caseId,
+            caseTitle: caso.titulo,
+            action,
+            minutaVersion: 3,
+            notes: action === "aprovar_com_alteracoes" ? "Alterações aplicadas pelo advogado na minuta." : undefined,
+          }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error || `Erro ${res.status}`);
+        }
+        const d = (await res.json()) as FenixDecision;
+        setDecision(d);
+        setHistory((h) => [d, ...h]);
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : "Falha no Botão Fênix");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [caseId, caso.titulo],
+  );
 
   return (
     <div style={{ flex: 1, display: "flex", alignItems: "stretch", background: "#F5F7FB", height: "100vh" }}>
-      {/* Queue */}
       <aside
         style={{
           width: 330,
@@ -49,7 +96,7 @@ export default function Advogado({
               Botão Fênix
             </strong>
           </div>
-          <div style={{ fontSize: 12, color: "#6B7A96" }}>
+          <div style={{ fontSize: 12, color: "#54627F" }}>
             Fila de revisão · {nome} · {oab}
           </div>
         </div>
@@ -94,7 +141,7 @@ export default function Advogado({
                   </span>
                 </div>
                 <div style={{ fontSize: 12.5, color: "#556482", lineHeight: 1.45 }}>{cs.materia}</div>
-                <div style={{ fontSize: 11.5, color: "#8A97AE", display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ fontSize: 11.5, color: "#657493", display: "flex", alignItems: "center", gap: 5 }}>
                   <Icon name="clock" size={12} strokeWidth={2.75} />
                   {cs.prazo}
                 </div>
@@ -104,14 +151,13 @@ export default function Advogado({
         </div>
       </aside>
 
-      {/* Dossier */}
       <main style={{ flex: 1, minWidth: 0, padding: "clamp(20px, 3vw, 36px)", overflowY: "auto", maxHeight: "100vh" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap", marginBottom: 20 }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <h1 className="font-display" style={{ fontWeight: 800, fontSize: "clamp(21px, 2.6vw, 27px)", letterSpacing: "-.02em", margin: "0 0 4px" }}>
               {caso.titulo}
             </h1>
-            <p style={{ fontSize: 13.5, color: "#6B7A96", margin: 0 }}>{caso.sub}</p>
+            <p style={{ fontSize: 13.5, color: "#54627F", margin: 0 }}>{caso.sub}</p>
           </div>
           <span
             style={{
@@ -129,11 +175,11 @@ export default function Advogado({
           <LogoutButton />
         </div>
 
-        {aprovado && (
+        {decision && (
           <div
             style={{
-              background: "#E6F7F6",
-              border: "1.5px solid rgba(18,165,165,.5)",
+              background: decision.canProtocol ? "#E6F7F6" : "#FFF3E6",
+              border: `1.5px solid ${decision.canProtocol ? "rgba(18,165,165,.5)" : "rgba(217,131,36,.45)"}`,
               borderRadius: 18,
               padding: "18px 22px",
               marginBottom: 20,
@@ -149,7 +195,7 @@ export default function Advogado({
                 height: 40,
                 flex: "none",
                 borderRadius: "50%",
-                background: "#12A5A5",
+                background: decision.canProtocol ? "#12A5A5" : "#D98324",
                 color: "#fff",
                 display: "flex",
                 alignItems: "center",
@@ -159,17 +205,25 @@ export default function Advogado({
               <Icon name="check" size={20} strokeWidth={3} />
             </div>
             <div>
-              <strong style={{ fontSize: 14.5, color: "#0C6E6E" }}>
-                Minuta aprovada e liberada para protocolo
+              <strong style={{ fontSize: 14.5, color: decision.canProtocol ? "#0C6E6E" : "#9A5B1F" }}>
+                {decision.statusLabel}
               </strong>
               <div style={{ fontSize: 12.5, color: "#3E4E6C", marginTop: 2 }}>
-                {nome} · {oab} · hoje às 14:32 · versão 3 · trilha de auditoria registrada
+                {decision.actorName}
+                {decision.actorOab ? ` · ${decision.actorOab}` : ""} ·{" "}
+                {new Date(decision.at).toLocaleString("pt-BR")} · v{decision.minutaVersion} · trilha {decision.id}
+                {decision.canProtocol ? " · liberado para protocolo" : " · não protocolar ainda"}
               </div>
             </div>
           </div>
         )}
 
-        {/* Dossier tabs */}
+        {err && (
+          <div style={{ background: "#FDEDE7", color: "#C2451F", borderRadius: 14, padding: "12px 16px", marginBottom: 16, fontSize: 13.5, fontWeight: 600 }}>
+            {err}
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>
           {advTabs.map((at) => {
             const active = tab === at.id;
@@ -200,7 +254,19 @@ export default function Advogado({
         {tab === "analise" && <TabAnalise />}
         {tab === "minuta" && <TabMinuta titulo={caso.minutaTitulo} texto={caso.minuta} />}
 
-        {/* Actions */}
+        {history.length > 0 && (
+          <div style={{ ...panelCard, marginTop: 16 }}>
+            <H4>Trilha Botão Fênix (esta sessão)</H4>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#3E4E6C", lineHeight: 1.6 }}>
+              {history.map((h) => (
+                <li key={h.id}>
+                  <strong>{h.action}</strong> — {h.statusLabel} · {new Date(h.at).toLocaleTimeString("pt-BR")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div
           style={{
             position: "sticky",
@@ -215,63 +281,37 @@ export default function Advogado({
             flexWrap: "wrap",
           }}
         >
-          <button
-            onClick={() => setAprovado(true)}
-            className="h-btn-lift1"
-            style={{
-              font: "inherit",
-              fontSize: 14,
-              fontWeight: 800,
-              cursor: "pointer",
-              border: "none",
-              borderRadius: 999,
-              padding: "13px 26px",
-              color: "#fff",
-              background: "linear-gradient(135deg, #12A5A5, #0F8B8B)",
-              boxShadow: "0 10px 24px rgba(18,165,165,.35)",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 9,
-            }}
-          >
-            <Icon name="check" size={16} strokeWidth={3} />
-            Aprovar e prosseguir
-          </button>
-          {["Editar e aprovar", "Solicitar documentos", "Assumir atendimento"].map((label) => (
+          {ACTION_BTNS.map((btn) => (
             <button
-              key={label}
-              className="h-btn-outline-dark"
+              key={btn.action}
+              onClick={() => runAction(btn.action)}
+              disabled={busy}
+              className={btn.primary ? "h-btn-lift1" : btn.urgent ? "h-urgent" : "h-btn-outline-dark"}
               style={{
                 font: "inherit",
                 fontSize: 14,
-                fontWeight: 700,
-                cursor: "pointer",
-                background: "#fff",
-                border: "1.5px solid rgba(19,35,63,.15)",
-                color: "#13233F",
+                fontWeight: btn.primary ? 800 : 700,
+                cursor: busy ? "wait" : "pointer",
+                opacity: busy ? 0.6 : 1,
+                border: btn.primary ? "none" : btn.urgent ? "1.5px solid rgba(226,87,76,.35)" : "1.5px solid rgba(19,35,63,.15)",
                 borderRadius: 999,
-                padding: "12px 22px",
+                padding: btn.primary ? "13px 26px" : "12px 22px",
+                color: btn.primary ? "#fff" : btn.urgent ? "#C2451F" : "#13233F",
+                background: btn.primary
+                  ? "linear-gradient(135deg, #12A5A5, #0F8B8B)"
+                  : btn.urgent
+                    ? "#FDEDE7"
+                    : "#fff",
+                boxShadow: btn.primary ? "0 10px 24px rgba(18,165,165,.35)" : undefined,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 9,
               }}
             >
-              {label}
+              {btn.primary && <Icon name="check" size={16} strokeWidth={3} />}
+              {btn.label}
             </button>
           ))}
-          <button
-            className="h-urgent"
-            style={{
-              font: "inherit",
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: "pointer",
-              background: "#FDEDE7",
-              border: "1.5px solid rgba(226,87,76,.35)",
-              color: "#C2451F",
-              borderRadius: 999,
-              padding: "12px 22px",
-            }}
-          >
-            Marcar como urgente
-          </button>
         </div>
       </main>
     </div>
@@ -368,13 +408,13 @@ function TabAnalise() {
             background: "#FFF7ED",
             border: "1px solid rgba(245,163,79,.4)",
             borderRadius: 12,
-            padding: "12px 14px",
+            padding: "10px 12px",
             fontSize: 12,
             color: "#9A5B1F",
             lineHeight: 1.5,
           }}
         >
-          Nenhuma jurisprudência é citada sem confirmação de existência, tribunal, número e conteúdo.
+          Nenhuma jurisprudência sem tribunal/número/ementa confirmados. Peças jurídicas só após Botão Fênix.
         </div>
       </div>
     </div>
@@ -383,33 +423,23 @@ function TabAnalise() {
 
 function TabMinuta({ titulo, texto }: { titulo: string; texto: string }) {
   return (
-    <div style={{ ...panelCard, padding: 26 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <h4 className="font-display" style={{ fontWeight: 800, fontSize: 15, margin: 0, flex: 1 }}>
-          {titulo}
-        </h4>
-        <span style={{ background: "#F0F4F9", color: "#3E4E6C", fontSize: 11, fontWeight: 800, borderRadius: 999, padding: "4px 12px" }}>
-          versão 3 · gerada hoje 11:04
-        </span>
-      </div>
-      <div
+    <div style={panelCard}>
+      <H4>{titulo}</H4>
+      <pre
         style={{
-          fontFamily: "Georgia, 'Times New Roman', serif",
-          fontSize: 14.5,
-          lineHeight: 1.85,
-          color: "#2A3A58",
-          background: "#FAFBFD",
-          border: "1px solid rgba(19,35,63,.06)",
+          margin: 0,
+          whiteSpace: "pre-wrap",
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+          fontSize: 12.5,
+          lineHeight: 1.55,
+          color: "#3E4E6C",
+          background: "#F5F7FB",
           borderRadius: 14,
-          padding: "26px 30px",
-          whiteSpace: "pre-line",
+          padding: 16,
         }}
       >
         {texto}
-      </div>
-      <div style={{ marginTop: 14, fontSize: 12, color: "#8A97AE" }}>
-        Trechos em análise destacados para o revisor · campos inferidos marcados · documento não protocolado até aprovação.
-      </div>
+      </pre>
     </div>
   );
 }

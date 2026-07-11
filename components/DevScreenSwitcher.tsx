@@ -8,7 +8,9 @@ const SCREENS: [string, string][] = [
   ["/chat", "Conversa com a Clara"],
   ["/urgente", "Ajuda urgente"],
   ["/painel", "Painel do usuário"],
+  ["/nucleos", "Núcleos"],
   ["/advogado", "Painel do advogado"],
+  ["/privacidade", "Privacidade"],
 ];
 
 /**

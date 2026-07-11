@@ -29,5 +29,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/painel/:path*", "/advogado/:path*"],
+  matcher: ["/painel/:path*", "/advogado/:path*", "/nucleos/:path*"],
 };

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import LogoutButton from "@/components/LogoutButton";
+import { AtlasDashboard } from "@/components/charts/PainelCharts";
+import { debtsFromDashboard, runAtlas } from "@/lib/agents/atlas";
+import type { IrisResult } from "@/lib/agents/iris";
 import {
   painelNav,
   painelTitulos,
@@ -40,6 +43,39 @@ export default function Painel({
   const [titulo, sub] = painelTitulos[tab];
   const NOME = nome;
   const firstName = nome.split(" ")[0];
+
+  const atlas = useMemo(() => runAtlas({ debts: debtsFromDashboard(dividas) }), [dividas]);
+
+  const resumoAtlas = useMemo(() => {
+    const fmt = (n: number) =>
+      n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    return [
+      {
+        label: "Total devido",
+        valor: fmt(atlas.totalDivida),
+        nota: `${atlas.porCredor.length} credores identificados`,
+        color: "#13233F",
+      },
+      {
+        label: "Valor contestável",
+        valor: fmt(atlas.estrategia.find((e) => e.name === "Contestável")?.value ?? 0),
+        nota: "com sinais de inconsistência — revisão humana",
+        color: "#D95B33",
+      },
+      {
+        label: "Disponível por mês",
+        valor: fmt(atlas.disponivelMes),
+        nota: "após despesas essenciais protegidas",
+        color: "#0F8B8B",
+      },
+      {
+        label: "Controle (90d)",
+        valor: `${atlas.controle90d}%`,
+        nota: "indicador estimado · sem promessa de resultado",
+        color: "#13233F",
+      },
+    ];
+  }, [atlas]);
 
   return (
     <div style={{ flex: 1, display: "flex", alignItems: "stretch", background: "#F5F7FB", height: "100vh" }}>
@@ -139,6 +175,24 @@ export default function Painel({
           >
             Falar com a Clara
           </button>
+          <button
+            onClick={() => router.push("/nucleos")}
+            style={{
+              font: "inherit",
+              width: "100%",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: "pointer",
+              border: "1px solid rgba(78,205,196,.35)",
+              borderRadius: 999,
+              padding: 8,
+              marginTop: 8,
+              color: "#7FE3DC",
+              background: "transparent",
+            }}
+          >
+            Núcleos · Super · Acordo · Ponte
+          </button>
         </div>
       </aside>
 
@@ -152,7 +206,7 @@ export default function Painel({
             >
               {titulo.replace("{nome}", firstName)}
             </h1>
-            <p style={{ fontSize: 14, color: "#6B7A96", margin: "4px 0 0" }}>{sub}</p>
+            <p style={{ fontSize: 14, color: "#54627F", margin: "4px 0 0" }}>{sub}</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span
@@ -187,7 +241,7 @@ export default function Painel({
           </div>
         </div>
 
-        {tab === "visao" && <TabVisao />}
+        {tab === "visao" && <TabVisao resumoCards={resumoAtlas} atlasReady={atlas} />}
         {tab === "dividas" && <TabDividas dividas={dividas} />}
         {tab === "prazos" && <TabPrazos prazos={prazos} />}
         {tab === "cofre" && <TabCofre docs={docs} />}
@@ -210,7 +264,13 @@ function H3({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TabVisao() {
+function TabVisao({
+  resumoCards,
+  atlasReady,
+}: {
+  resumoCards: typeof resumo;
+  atlasReady: ReturnType<typeof runAtlas>;
+}) {
   return (
     <>
       <div
@@ -221,16 +281,19 @@ function TabVisao() {
           marginBottom: 26,
         }}
       >
-        {resumo.map((rs) => (
+        {resumoCards.map((rs) => (
           <div key={rs.label} style={{ ...cardBase, borderRadius: 20, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#6B7A96", marginBottom: 8 }}>{rs.label}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#54627F", marginBottom: 8 }}>{rs.label}</div>
             <div className="font-display" style={{ fontWeight: 800, fontSize: 26, letterSpacing: "-.02em", color: rs.color }}>
               {rs.valor}
             </div>
-            <div style={{ fontSize: 11.5, color: "#8A97AE", marginTop: 4 }}>{rs.nota}</div>
+            <div style={{ fontSize: 11.5, color: "#657493", marginTop: 4 }}>{rs.nota}</div>
           </div>
         ))}
       </div>
+
+      <H3>Raio-X do Atlas</H3>
+      <AtlasDashboard atlas={atlasReady} />
 
       <H3>Seus três problemas, organizados</H3>
       <div
@@ -244,7 +307,15 @@ function TabVisao() {
         {problemas.map((pb) => (
           <div
             key={pb.titulo}
-            style={{ ...cardBase, borderLeft: `4px solid ${pb.cor}`, borderRadius: 18, padding: 20, display: "flex", flexDirection: "column", gap: 9 }}
+            style={{
+              ...cardBase,
+              borderRadius: 18,
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 9,
+              boxShadow: `inset 0 3px 0 0 ${pb.cor}`,
+            }}
           >
             <span
               style={{
@@ -262,7 +333,7 @@ function TabVisao() {
               {pb.tag}
             </span>
             <strong style={{ fontSize: 15.5, lineHeight: 1.35 }}>{pb.titulo}</strong>
-            <p style={{ fontSize: 13, color: "#6B7A96", margin: 0, lineHeight: 1.55, flex: 1 }}>{pb.desc}</p>
+            <p style={{ fontSize: 13, color: "#54627F", margin: 0, lineHeight: 1.55, flex: 1 }}>{pb.desc}</p>
             <button
               style={{
                 font: "inherit",
@@ -320,7 +391,7 @@ function TabVisao() {
                 {pe.quando}
               </div>
               <strong style={{ fontSize: 14.5 }}>{pe.titulo}</strong>
-              <p style={{ fontSize: 13, color: "#6B7A96", margin: "3px 0 0", lineHeight: 1.5 }}>{pe.desc}</p>
+              <p style={{ fontSize: 13, color: "#54627F", margin: "3px 0 0", lineHeight: 1.5 }}>{pe.desc}</p>
             </div>
           </div>
         ))}
@@ -339,11 +410,11 @@ function TabDividas({ dividas }: { dividas: Divida[] }) {
         >
           <div style={{ flex: "2 1 220px", minWidth: 180 }}>
             <strong style={{ fontSize: 15 }}>{d.credor}</strong>
-            <div style={{ fontSize: 12.5, color: "#6B7A96", marginTop: 2 }}>{d.tipo}</div>
+            <div style={{ fontSize: 12.5, color: "#54627F", marginTop: 2 }}>{d.tipo}</div>
           </div>
           <div style={{ flex: 1, minWidth: 110 }}>
             <div className="font-display" style={{ fontWeight: 800, fontSize: 18 }}>{d.valor}</div>
-            <div style={{ fontSize: 11.5, color: "#8A97AE" }}>{d.detalhe}</div>
+            <div style={{ fontSize: 11.5, color: "#657493" }}>{d.detalhe}</div>
           </div>
           <span
             style={{
@@ -411,7 +482,7 @@ function TabPrazos({ prazos }: { prazos: Prazo[] }) {
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <strong style={{ fontSize: 15 }}>{pz.titulo}</strong>
-              <div style={{ fontSize: 12.5, color: "#6B7A96", marginTop: 2 }}>{pz.desc}</div>
+              <div style={{ fontSize: 12.5, color: "#54627F", marginTop: 2 }}>{pz.desc}</div>
             </div>
             <span
               style={{
@@ -453,6 +524,35 @@ function TabPrazos({ prazos }: { prazos: Prazo[] }) {
 }
 
 function TabCofre({ docs }: { docs: Doc[] }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [iris, setIris] = useState<IrisResult | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function lerComIris() {
+    setLoading(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/agents/iris", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, fileName: fileName || undefined }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.message || j.error || "Falha na leitura");
+      }
+      const data = (await res.json()) as IrisResult;
+      setIris(data);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Erro ao ler documento");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))", gap: 14 }}>
@@ -492,6 +592,7 @@ function TabCofre({ docs }: { docs: Doc[] }) {
         ))}
         <button
           className="h-dashed"
+          onClick={() => setOpen((o) => !o)}
           style={{
             font: "inherit",
             cursor: "pointer",
@@ -511,10 +612,113 @@ function TabCofre({ docs }: { docs: Doc[] }) {
           }}
         >
           <Icon name="plus" size={22} />
-          Adicionar documento
+          {open ? "Fechar envio" : "Adicionar documento"}
         </button>
       </div>
-      <div style={{ marginTop: 18, fontSize: 12.5, color: "#8A97AE", display: "flex", alignItems: "center", gap: 8 }}>
+
+      {open && (
+        <div style={{ ...cardBase, borderRadius: 20, padding: 22, marginTop: 16 }}>
+          <H3>Íris — leitura de documento</H3>
+          <p style={{ fontSize: 13, color: "#54627F", margin: "0 0 14px", lineHeight: 1.5 }}>
+            Cole o texto da citação, fatura ou contrato. A Íris extrai datas, valores e número do processo quando
+            existirem — sem inventar o que não está no papel. OCR de PDF/foto chega na próxima onda.
+          </p>
+          <input
+            type="text"
+            placeholder="Nome do arquivo (opcional)"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+            style={{
+              width: "100%",
+              font: "inherit",
+              fontSize: 13.5,
+              padding: "10px 14px",
+              borderRadius: 12,
+              border: "1.5px solid rgba(19,35,63,.12)",
+              marginBottom: 10,
+              boxSizing: "border-box",
+            }}
+          />
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Cole aqui o texto do documento…"
+            rows={6}
+            style={{
+              width: "100%",
+              font: "inherit",
+              fontSize: 13.5,
+              padding: "12px 14px",
+              borderRadius: 14,
+              border: "1.5px solid rgba(19,35,63,.12)",
+              resize: "vertical",
+              boxSizing: "border-box",
+              lineHeight: 1.5,
+            }}
+          />
+          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              onClick={lerComIris}
+              disabled={loading || !text.trim()}
+              className="h-btn-teal-outline"
+              style={{
+                font: "inherit",
+                fontSize: 13.5,
+                fontWeight: 800,
+                cursor: loading || !text.trim() ? "not-allowed" : "pointer",
+                opacity: loading || !text.trim() ? 0.55 : 1,
+                border: "none",
+                borderRadius: 999,
+                padding: "11px 20px",
+                color: "#fff",
+                background: "var(--grad-teal)",
+              }}
+            >
+              {loading ? "Lendo…" : "Pedir leitura à Íris"}
+            </button>
+            <span style={{ fontSize: 12, color: "#657493" }}>Nunca envie senha de banco ou gov.br.</span>
+          </div>
+          {err && (
+            <p style={{ color: "#C2451F", fontSize: 13, marginTop: 12, fontWeight: 600 }}>{err}</p>
+          )}
+          {iris && (
+            <div
+              style={{
+                marginTop: 16,
+                background: "#F5F7FB",
+                borderRadius: 16,
+                padding: 16,
+                fontSize: 13.5,
+                lineHeight: 1.55,
+              }}
+            >
+              <div style={{ fontWeight: 800, marginBottom: 6 }}>
+                Tipo: {iris.extracted.kind} · faixa {iris.band} · confiança {(iris.confidence * 100).toFixed(0)}%
+              </div>
+              <p style={{ margin: "0 0 10px", color: "#3E4E6C" }}>{iris.summary}</p>
+              {iris.extracted.rawHighlights.length > 0 && (
+                <ul style={{ margin: "0 0 10px", paddingLeft: 18, color: "#13233F" }}>
+                  {iris.extracted.rawHighlights.map((h) => (
+                    <li key={h}>{h}</li>
+                  ))}
+                </ul>
+              )}
+              {iris.extracted.prazoSugerido.value && (
+                <p style={{ margin: "0 0 8px", fontSize: 12.5, color: "#9A5B1F" }}>
+                  Prazo sugerido (inferido — confirme no original): {iris.extracted.prazoSugerido.value}
+                </p>
+              )}
+              <ul style={{ margin: 0, paddingLeft: 18, color: "#0C6E6E" }}>
+                {iris.nextSteps.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop: 18, fontSize: 12.5, color: "#657493", display: "flex", alignItems: "center", gap: 8 }}>
         <Icon name="lock" size={14} strokeWidth={2.75} />
         Cofre criptografado. Todo acesso fica registrado — inclusive o nosso.
       </div>
@@ -530,7 +734,7 @@ function TabReclamacoes({ reclamacoes }: { reclamacoes: Reclamacao[] }) {
           <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
             <div style={{ flex: 1, minWidth: 220 }}>
               <strong style={{ fontSize: 15.5 }}>{rc.titulo}</strong>
-              <div style={{ fontSize: 12.5, color: "#6B7A96", marginTop: 2 }}>
+              <div style={{ fontSize: 12.5, color: "#54627F", marginTop: 2 }}>
                 {rc.canal} · protocolo {rc.protocolo}
               </div>
             </div>
@@ -554,7 +758,7 @@ function TabReclamacoes({ reclamacoes }: { reclamacoes: Reclamacao[] }) {
               <div key={i} style={{ flex: 1, minWidth: 110, display: "flex", flexDirection: "column", gap: 7, paddingRight: 10 }}>
                 <div style={{ height: 5, borderRadius: 999, background: et.barra }} />
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: et.cor }}>{et.nome}</div>
-                <div style={{ fontSize: 11, color: "#8A97AE" }}>{et.data}</div>
+                <div style={{ fontSize: 11, color: "#657493" }}>{et.data}</div>
               </div>
             ))}
           </div>
