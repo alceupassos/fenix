@@ -123,3 +123,14 @@ a:hover { color: var(--teal-800); }
 
 /* utility scrollbar so overflow panes look intentional */
 .scroll-y { overflow-y: auto; }
+
+/* ---------- brand illustrations (SVG art) ---------- */
+@keyframes fxDraw { from { stroke-dashoffset: var(--dash, 600); } to { stroke-dashoffset: 0; } }
+.art-draw  { stroke-dasharray: var(--dash, 600); stroke-dashoffset: var(--dash, 600); animation: fxDraw 1.8s cubic-bezier(.6,.02,.2,1) forwards; }
+.art-draw.d2 { animation-delay: .35s; }
+.art-draw.d3 { animation-delay: .7s; }
+.art-float { animation: fxFloat 6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .art-draw { animation: none; stroke-dashoffset: 0; }
+  .art-float { animation: none; }
+}

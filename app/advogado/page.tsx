@@ -11,7 +11,7 @@ export default async function AdvogadoPage() {
   return (
     <Advogado
       nome={session.user.name ?? "Dr. Leandro Giannasi"}
-      oab={session.user.oab ?? "OAB/SP 312.456"}
+      oab={session.user.oab ?? "OAB/SP 211.304"}
       casos={casos}
     />
   );

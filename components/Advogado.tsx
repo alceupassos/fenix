@@ -20,7 +20,7 @@ const ACTION_BTNS: { action: FenixAction; label: string; primary?: boolean; urge
 
 export default function Advogado({
   nome = "Dr. Leandro Giannasi",
-  oab = "OAB/SP 312.456",
+  oab = "OAB/SP 211.304",
   casos = casosData,
 }: {
   nome?: string;

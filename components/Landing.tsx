@@ -546,6 +546,24 @@ function ComoFunciona() {
         </h2>
         <div
           style={{
+            margin: "0 0 36px",
+            borderRadius: 20,
+            overflow: "hidden",
+            border: "1px solid rgba(19,35,63,.06)",
+            boxShadow: "0 16px 40px rgba(16,42,84,.08)",
+          }}
+        >
+          <Image
+            src="/brand/organizar-fios.jpg"
+            alt="Fios embaralhados à esquerda que se recompõem em linhas organizadas à direita — do caos à ordem, um problema de cada vez."
+            width={1280}
+            height={720}
+            sizes="(max-width: 900px) 100vw, 900px"
+            style={{ width: "100%", height: "auto", display: "block" }}
+          />
+        </div>
+        <div
+          style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(195px, 1fr))",
             gap: 26,
@@ -890,7 +908,25 @@ function Faq() {
 function CtaFinal() {
   return (
     <section style={{ maxWidth: 860, margin: "0 auto", padding: "88px 28px 100px", textAlign: "center" }}>
-      <Image src="/fenix-mark.png" alt="" width={72} height={68} style={{ margin: "0 auto 24px", width: 72, height: "auto" }} />
+      <div
+        style={{
+          maxWidth: 420,
+          margin: "0 auto 30px",
+          borderRadius: 24,
+          overflow: "hidden",
+          border: "1px solid rgba(19,35,63,.06)",
+          boxShadow: "0 24px 60px rgba(16,42,84,.14)",
+        }}
+      >
+        <Image
+          src="/brand/hero-recomeco.jpg"
+          alt="Amanhecer suave sobre uma pessoa reorganizando seus papéis à mesa, com alívio no rosto — o recomeço possível."
+          width={1024}
+          height={1024}
+          sizes="(max-width: 520px) 100vw, 420px"
+          style={{ width: "100%", height: "auto", display: "block" }}
+        />
+      </div>
       <p
         className="font-display"
         style={{
@@ -964,6 +1000,43 @@ function Footer() {
             ))}
           </div>
         ))}
+      </div>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,.1)" }}>
+        <div
+          style={{
+            ...WRAP,
+            padding: "18px 28px 40px",
+            display: "flex",
+            gap: "6px 16px",
+            flexWrap: "wrap",
+            alignItems: "baseline",
+            fontSize: 12.5,
+            color: "rgba(255,255,255,.55)",
+            lineHeight: 1.6,
+          }}
+        >
+          <span
+            style={{
+              color: "#fff",
+              fontSize: 11.5,
+              letterSpacing: ".12em",
+              textTransform: "uppercase",
+              fontWeight: 700,
+              flex: "none",
+            }}
+          >
+            Advocacia parceira
+          </span>
+          <span>
+            <strong style={{ color: "rgba(255,255,255,.85)", fontWeight: 700 }}>
+              Dr. Leandro Giannasi Severini Ferreira
+            </strong>
+            {" "}· OAB/SP 211.304 · Advogado · Seccional SP · situação regular ·{" "}
+            <a href="tel:+551126015100" style={{ color: "#7FE3DC", textDecoration: "none" }}>
+              (11) 2601-5100
+            </a>
+          </span>
+        </div>
       </div>
     </footer>
   );
