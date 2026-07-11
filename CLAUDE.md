@@ -69,11 +69,23 @@ The implementation plan (phases, architecture, verification) is at
     The Assinatura CTA uses `components/PlanoCheckoutButton.tsx`. **Stripe keys are pending** — set
     `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET`; until then checkout falls back to `/login`.
 
-## Deploy
+## Deploy — ✅ NO AR em https://fenix.angra.io
 
-Target domain **fenix.angra.io**, running on the VPS (`root@62.171.181.241`) where the Postgres is
-`localhost`. Set env from `.env.production.local`. Remote: `github.com/alceupassos/fenix`
-(commit as alceupassos@gmail.com — pending, not yet a git repo).
+Rodando na VPS (`root@62.171.181.241`), Postgres `localhost`. Padrão da casa: **nginx + pm2**.
+- Código em `/opt/fenix` (enviado via `git archive main | scp`, `npm ci && npm run build`).
+- App sob **pm2** como `fenix` na porta **3020** (`pm2 start npm --name fenix -- start`; `pm2 save`).
+- Vhost `/etc/nginx/sites-available/fenix.angra.io` → `proxy_pass 127.0.0.1:3020` com
+  `proxy_buffering off` (streaming da Clara). TLS via `certbot --nginx -d fenix.angra.io` (cert
+  próprio em `/etc/letsencrypt/live/fenix.angra.io/`, renovação automática).
+- Env de produção em `/opt/fenix/.env.production.local` (chmod 600, **não versionado**):
+  `FENIX_DATABASE_URL=…@localhost:5432/fenix`, `AUTH_URL=https://fenix.angra.io`,
+  `FENIX_AI_PROVIDER=deepseek` + `DEEPSEEK_API_KEY`, `AUTH_SECRET`.
+- **Redeploy:** `git archive main | scp` → `/opt/fenix`, `npm ci && npm run build`, `pm2 reload fenix`.
+
+Verificado em produção: landing 200, HTTP→HTTPS 301, `/painel` e `/advogado` com gating por papel
+(auth lendo do Postgres), Clara real (DeepSeek) em streaming via proxy. Stripe pendente de keys.
+
+Remote git: `github.com/alceupassos/fenix` (branch `main`, commits como alceupassos@gmail.com).
 
 ## Conventions
 
