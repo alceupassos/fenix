@@ -143,7 +143,77 @@ passou por QA + Compliance.
 
 ---
 
-## 5. DIREÇÃO DE ARTE + PROMPTS DE GERAÇÃO DE IMAGEM
+## 5. DIREÇÃO CRIATIVA & DESIGN SYSTEM (padrão impeccable)
+
+> **Referência visual (north star):** o plano visual navegável está publicado em
+> **https://claude.ai/code/artifact/df659f89-76d3-4e30-aacb-de4d9cc33a97**. Reproduza aquele
+> nível de acabamento — tipografia com hierarquia real, espaçamento pensado, movimento intencional,
+> gráficos vivos. Abaixo, o sistema que o sustenta. **Trate estas regras como obrigatórias.**
+
+### 5.0 Voz da marca — 3 palavras físicas
+**Abrigo · Respiro · Reerguida.** Cada tela deve transmitir acolhimento (não frieza corporativa),
+alívio (ar, espaço em branco generoso) e um movimento ascendente sutil. Nunca dramatize o
+sofrimento; mostre dignidade e o próximo passo.
+
+### 5.1 Registro (product × brand)
+- **Brand** (landing, páginas de conversão, institucional): design *é* o produto — POV forte,
+  hero como tese, imagem/motion com ambição. Uma ideia dominante por dobra, scroll longo, pacing.
+- **Product** (painéis, chat, cofre, fila do advogado): design *serve* a tarefa — resumo antes do
+  detalhe, estado legível num relance (pill/chip/faixa), o que é interativo parece interativo.
+  Cor semântica (bom/atenção/crítico) é separada do accent.
+
+### 5.2 Tipografia (identidade existente — preservar)
+- **Display:** Bricolage Grotesque (800, `letter-spacing:-.03em`). **Corpo:** Plus Jakarta Sans.
+  Já são a identidade da Fênix — **mantenha** (preservação de identidade vence o "reflex-reject").
+- Escala modular fluida com `clamp()`, razão ≥1.25 entre passos; teto de display ≤ ~96px;
+  `letter-spacing` de display nunca abaixo de -0.04em; `text-wrap:balance` em h1–h3, `pretty` em prosa.
+- Corpo entre 65–75ch. Texto claro sobre fundo escuro ganha +0.05–0.1 de `line-height`.
+- **Mono** (`ui-monospace`) só para dados/números/protocolos — **nunca** como fantasia "técnica"
+  espalhada por toda seção.
+
+### 5.3 Cor & tema (OKLCH; contraste real)
+- Tokens base: navy `#0A1730/#0C1D3E/#102A54`, teal `#12A5A5`/`#4ECDC4`/`#7FE3DC`,
+  âmbar `#F5A34F`/laranja `#EE6E45`, marfim frio `#EEF2F8`. Neutros com leve viés navy (não cinza puro).
+- Faixas como **cor semântica** separada do accent: verde `#2FB47C`, amarela `#E0A32E`, vermelha `#E2574C`.
+- Estratégia: hero **committed/drenched** (navy com glows radiais teal+âmbar — assinatura da marca);
+  conteúdo **restrained** (marfim, um accent por vez). Corpo ≥ 4.5:1; texto grande ≥ 3:1; placeholder 4.5:1.
+- **Light e dark** ambos cuidados, via tokens (`prefers-color-scheme` + override `[data-theme]`),
+  nunca invertendo cru.
+
+### 5.4 Layout & ritmo
+- Flex para 1D, Grid para 2D; grids responsivos `repeat(auto-fit,minmax(280px,1fr))`.
+- Ritmo de espaçamento variado (`clamp()`), assimetria pontual para ênfase. Escala de z-index semântica.
+- **Cards são a resposta preguiçosa** — use quando forem realmente a melhor affordance; varie o
+  tratamento entre seções (roster, timeline conectada, fluxo numerado) em vez de repetir o mesmo grid.
+
+### 5.5 Movimento (intencional, com reduced-motion)
+- Entrada orquestrada > micro-interações espalhadas. Ease-out exponencial (quart/quint/expo); sem bounce.
+- **Reveal realça um default já visível** — nunca esconda conteúdo atrás de uma classe (quebra em
+  aba oculta/headless). `@media (prefers-reduced-motion:reduce)` obrigatório em toda animação.
+- Materiais premium além de transform/opacity: blur, backdrop-filter, clip-path, mask, glow — quando
+  melhoram de fato e ficam suaves. Libs: `motion`/GSAP/anime.js/lenis quando precisar de mais.
+
+### 5.6 Gráficos dinâmicos — specs (interativos + animados)
+No app use **Recharts/visx**; em artifacts self-contained, **SVG+JS vanilla**. Todo gráfico:
+anima na entrada (draw/grow), tem **tooltip** no hover/foco, **alternativa textual/tabela** e contraste AA.
+- **Donut — Composição da dívida** (por credor): varre no reveal; hover → valor + %.
+- **Barras — Estratégia**: Negociável × Contestável × Prioritária; cresce no reveal.
+- **Área — Renda × mínimo existencial**: 2 linhas (renda/essencial), destaca a *sobra* mensal.
+- **Gauge — Indicador-mor**: % que retoma o controle em 90 dias (número conta até a meta). É a métrica-norte.
+- **Timeline — Mapa de Recomeço**: hoje/semana/mês/depois, marcos clicáveis.
+
+### 5.7 Proibições (impeccable) — nunca faça
+Texto em gradiente (`background-clip:text`); eyebrow minúscula em CAIXA ALTA trackada acima de **toda**
+seção do produto; borda lateral colorida (side-stripe) em cards/alertas; grids de cards idênticos
+repetidos sem fim; glassmorphism decorativo; o template "hero-metric"; mono como disfarce "técnico";
+`<div>` colorido no lugar de imagem quando a foto é necessária.
+
+### 5.8 Imagens
+Onde a foto é necessária, **entregue imagem** (assets reais, raster gerado, ou cena SVG/Canvas/WebGL);
+nunca um retângulo colorido. Estilo *washed* (dessaturado, quente, suave). Proibições visuais do §10
+valem sempre (sem martelo/balança/colunas/latim/preto-e-dourado/fênix de videogame). Prompts prontos abaixo.
+
+## 5.9 PROMPTS DE GERAÇÃO DE IMAGEM
 
 Estética-guia (§10): **abrigo, reorganização, luz depois da tempestade, dignidade**. Paleta
 navy `#0C1D3E`, teal `#12A5A5`/`#4ECDC4`, laranja `#F5A34F`/`#EE6E45`, marfim `#F5F7FB`.
@@ -176,7 +246,7 @@ dignidade; espaço negativo generoso para sobrepor UI/legendas.
 
 ---
 
-## 6. ANIMAÇÕES E GRÁFICOS DINÂMICOS (interativos + animados)
+## 6. NOTAS DE IMPLEMENTAÇÃO — MOTION & CHARTS (complementa §5.5–5.6)
 
 - **Micro-interações:** botões com `translateY(-2px)` + sombra no hover; foco `:focus-visible`
   teal; transições 150ms; respeitar `prefers-reduced-motion`.
