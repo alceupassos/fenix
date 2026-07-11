@@ -3,12 +3,14 @@ import Image from "next/image";
 import { Icon } from "@/components/Icon";
 import { Brand } from "@/components/Brand";
 import PlanoCheckoutButton from "@/components/PlanoCheckoutButton";
+import { JsonLd, faqSchema } from "@/components/JsonLd";
 import {
   situacoes,
   passos,
   agentes,
   segCards,
   planos,
+  faqs,
 } from "@/lib/data";
 
 const WRAP: React.CSSProperties = { maxWidth: 1180, margin: "0 auto" };
@@ -830,6 +832,61 @@ function Planos() {
   );
 }
 
+function Faq() {
+  return (
+    <section id="faq" style={{ ...WRAP, padding: "72px 28px 40px" }}>
+      <Kicker>Perguntas frequentes</Kicker>
+      <h2
+        className="font-display"
+        style={{
+          fontWeight: 800,
+          fontSize: "clamp(28px, 3.6vw, 40px)",
+          letterSpacing: "-.02em",
+          margin: "0 0 28px",
+          maxWidth: "20ch",
+        }}
+      >
+        Sem letras miúdas.
+      </h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, maxWidth: 820 }}>
+        {faqs.map((f) => (
+          <details
+            key={f.q}
+            style={{
+              background: "#fff",
+              border: "1px solid rgba(19,35,63,.08)",
+              borderRadius: 16,
+              padding: "4px 20px",
+            }}
+          >
+            <summary
+              style={{
+                cursor: "pointer",
+                listStyle: "none",
+                padding: "16px 0",
+                fontWeight: 700,
+                fontSize: 15.5,
+                color: "#13233F",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <span style={{ flex: 1 }}>{f.q}</span>
+              <span style={{ color: "#12A5A5", fontSize: 20, lineHeight: 1, flex: "none" }} aria-hidden>
+                +
+              </span>
+            </summary>
+            <p style={{ margin: "0 0 18px", fontSize: 14, lineHeight: 1.65, color: "#54627F", maxWidth: "68ch" }}>
+              {f.a}
+            </p>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function CtaFinal() {
   return (
     <section style={{ maxWidth: 860, margin: "0 auto", padding: "88px 28px 100px", textAlign: "center" }}>
@@ -923,8 +980,10 @@ export default function Landing() {
         <ComoFunciona />
         <Seguranca />
         <Planos />
+        <Faq />
         <CtaFinal />
         <Footer />
+        <JsonLd data={faqSchema} />
       </div>
     </div>
   );

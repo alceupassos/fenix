@@ -312,6 +312,39 @@ export const analise: Analise[] = [
   { rotulo: "Pergunta em aberto", texto: "a usuária deseja audiência de conciliação antes da sentença? (sugerido: sim)", icon: "help", bg: "#EAF0F9", color: "#2B4B8F" },
 ];
 
+// ---- Perguntas frequentes (conteúdo real; alimenta a seção visível + FAQPage JSON-LD p/ AEO) ----
+export type Faq = { q: string; a: string };
+export const faqs: Faq[] = [
+  {
+    q: "A Sociedade Fênix é um escritório de advocacia?",
+    a: "Não. A Sociedade Fênix Tecnologia organiza a sua situação, prepara documentos e acompanha providências administrativas. Os serviços privativos de advocacia são prestados pela advocacia parceira, sociedade inscrita na OAB, com contrato e honorários próprios.",
+  },
+  {
+    q: "Preciso pagar para começar?",
+    a: "Não. A conversa com a Clara, a triagem de urgência e o diagnóstico inicial são gratuitos, sem cartão de crédito. E quando existir um canal público gratuito para a sua etapa, a gente avisa — você não precisa pagar por aquilo.",
+  },
+  {
+    q: "A inteligência artificial substitui o advogado?",
+    a: "Não. A IA prepara e organiza; tudo que exige responsabilidade jurídica é analisado e aprovado por um advogado pelo Botão Fênix antes de qualquer providência. Nunca citamos jurisprudência sem confirmar existência, tribunal, número e conteúdo.",
+  },
+  {
+    q: "Vocês vendem os meus dados?",
+    a: "Nunca. Não vendemos dados de usuários e não recebemos comissão de credores para direcionar você a um acordo. Os dados são tratados conforme a LGPD, com criptografia e trilha de acesso.",
+  },
+  {
+    q: "Quanto custa a Assinatura Fênix?",
+    a: "A Assinatura Fênix custa R$ 99 por mês, com pagamento seguro via Stripe e cancelamento quando você quiser. Há também pacotes de organização a partir de R$ 149. A entrada continua gratuita.",
+  },
+  {
+    q: "Vocês pedem a senha do gov.br ou do meu banco?",
+    a: "Nunca. Você faz a autenticação diretamente no serviço oficial. A plataforma não solicita senhas de gov.br, banco ou aplicativos.",
+  },
+  {
+    q: "Que tipos de problema a Fênix ajuda a resolver?",
+    a: "Dívidas e cobranças, superendividamento, processos e bloqueios, problemas com bancos e empresas, benefícios do INSS, pendências com a Receita e dívida ativa, questões de MEI, fraudes e golpes — sempre em linguagem simples, um problema de cada vez.",
+  },
+];
+
 export const fontes: string[] = [
   "CPC, arts. 335 e 336 — prazo e conteúdo da contestação (versão consultada em 08/07/2026)",
   "CDC, art. 42, parágrafo único — repetição do indébito",
