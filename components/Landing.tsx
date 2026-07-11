@@ -120,9 +120,27 @@ function Hero() {
         position: "relative",
       }}
     >
+      {/* Ambient phoenix loop behind the hero; poster shows under prefers-reduced-motion */}
+      <div className="hero-media" style={{ backgroundImage: "url(/brand/bg-phoenix-poster.jpg)" }} aria-hidden="true" />
+      <video
+        className="hero-video"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        poster="/brand/bg-phoenix-poster.jpg"
+        aria-hidden="true"
+        tabIndex={-1}
+      >
+        <source src="/brand/bg-phoenix.mp4" type="video/mp4" />
+      </video>
+      <div className="hero-scrim" aria-hidden="true" />
       <div
         style={{
           ...WRAP,
+          position: "relative",
+          zIndex: 2,
           padding: "84px 28px 96px",
           display: "flex",
           gap: 56,

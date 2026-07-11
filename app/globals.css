@@ -134,3 +134,11 @@ a:hover { color: var(--teal-800); }
   .art-draw { animation: none; stroke-dashoffset: 0; }
   .art-float { animation: none; }
 }
+
+/* ---------- hero background video ---------- */
+.hero-media { position: absolute; inset: 0; z-index: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
+.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; opacity: .5; }
+.hero-scrim { position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(90deg, rgba(10,23,48,.88) 0%, rgba(10,23,48,.55) 45%, rgba(10,23,48,.2) 100%); }
+/* no autoplay motion when the viewer asked to reduce it — poster (hero-media) stays */
+@media (prefers-reduced-motion: reduce) { .hero-video { display: none; } }
