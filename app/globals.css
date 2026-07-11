@@ -1,0 +1,125 @@
+/* ============================================================
+   Sociedade Fênix — design tokens ported from the prototype
+   (Sociedade Fênix.dc.html). Colors, gradients and the four
+   keyframes are 1:1 with the handoff.
+   ============================================================ */
+:root {
+  --bg: #F5F7FB;
+  --text: #13233F;
+
+  --navy-900: #0A1730;
+  --navy-800: #0C1D3E;
+  --navy-700: #102A54;
+  --navy-600: #14336B;
+
+  --teal: #12A5A5;
+  --teal-700: #0F8B8B;
+  --teal-800: #0C6E6E;
+  --teal-bright: #4ECDC4;
+  --teal-200: #7FE3DC;
+  --teal-50: #E6F7F6;
+
+  --orange: #EE6E45;
+  --orange-light: #F5A34F;
+  --orange-mid: #D95B33;
+  --orange-700: #C2451F;
+  --orange-900: #9A5B1F;
+  --amber-50: #FFF3E6;
+  --amber-600: #D98324;
+  --peach-50: #FDEDE7;
+  --red: #E2574C;
+
+  --slate-700: #3E4E6C;
+  --slate-600: #556482;
+  --slate-500: #6B7A96;
+  --slate-400: #8A97AE;
+  --cloud: #F0F4F9;
+  --cloud-200: #E2E9F2;
+  --blue-50: #EAF0F9;
+  --blue-600: #2B4B8F;
+
+  --grad-orange: linear-gradient(135deg, #F5A34F, #EE6E45);
+  --grad-teal: linear-gradient(135deg, #12A5A5, #4ECDC4);
+
+  --font-body-fallback: system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body, system-ui), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display { font-family: var(--font-heading, system-ui), system-ui, sans-serif; }
+
+a { color: var(--teal-700); text-decoration: none; }
+a:hover { color: var(--teal-800); }
+
+::selection { background: rgba(78, 205, 196, .35); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+@keyframes fxUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes fxDot  { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
+@keyframes fxGlow { 0%, 100% { opacity: .55; } 50% { opacity: .9; } }
+@keyframes fxFloat{ 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* ---------- interactive hovers (ported from style-hover) ---------- */
+.h-navlink { transition: all .15s; }
+.h-navlink:hover { background: rgba(18, 165, 165, .08); color: var(--teal-800); }
+
+.h-btn-orange { transition: all .15s; }
+.h-btn-orange:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(238, 110, 69, .45); }
+
+.h-btn-orange-lg { transition: all .15s; }
+.h-btn-orange-lg:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(238, 110, 69, .55); }
+
+.h-btn-orange-cta { transition: all .15s; }
+.h-btn-orange-cta:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(238, 110, 69, .5); }
+
+.h-btn-lift1 { transition: all .15s; }
+.h-btn-lift1:hover { transform: translateY(-1px); }
+
+.h-btn-outline-dark { transition: all .15s; }
+.h-btn-outline-dark:hover { border-color: var(--text) !important; }
+
+.h-btn-ghost-light { transition: all .15s; }
+.h-btn-ghost-light:hover { background: rgba(255, 255, 255, .12); border-color: rgba(255, 255, 255, .5) !important; }
+
+.h-chip-clara { transition: all .15s; }
+.h-chip-clara:hover { background: rgba(78, 205, 196, .15); border-color: var(--teal-bright) !important; }
+
+.h-card-situacao { transition: all .18s; }
+.h-card-situacao:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(16, 42, 84, .1); border-color: rgba(18, 165, 165, .4) !important; }
+
+.h-card-seg { transition: all .18s; }
+.h-card-seg:hover { background: rgba(255, 255, 255, .08); border-color: rgba(78, 205, 196, .4) !important; }
+
+.h-icon-round { transition: all .15s; }
+.h-icon-round:hover { background: var(--cloud-200); }
+
+.h-reply { transition: all .15s; }
+.h-reply:hover { background: var(--teal-50); border-color: var(--teal) !important; }
+
+.h-send { transition: all .15s; }
+.h-send:hover { transform: scale(1.06); }
+
+.h-clara-cta { transition: all .15s; }
+.h-clara-cta:hover { background: var(--teal-200); }
+
+.h-btn-teal-outline { transition: all .15s; }
+.h-btn-teal-outline:hover { background: var(--teal-50); }
+
+.h-dashed { transition: all .15s; }
+.h-dashed:hover { background: rgba(18, 165, 165, .09); }
+
+.h-urgent { transition: all .15s; }
+.h-urgent:hover { border-color: var(--red) !important; }
+
+/* utility scrollbar so overflow panes look intentional */
+.scroll-y { overflow-y: auto; }
