@@ -1,6 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { verifyCredentials as verifyDemo, type DemoUser } from "@/lib/users";
+import { verifyPassword } from "@/lib/auth/password";
 import {
   dividas as mockDividas,
   prazos as mockPrazos,
@@ -14,6 +15,7 @@ import {
   type Etapa,
   type Caso,
 } from "@/lib/data";
+import type { VerificationStatus } from "@/lib/kyc-contracts";
 
 /**
  * Data access with graceful fallback: when FENIX_DATABASE_URL is unset (or the
@@ -21,15 +23,41 @@ import {
  * with, so the app keeps working. When the DB is present, it reads persisted rows.
  */
 
-export type AuthUser = { id: string; name: string; email: string; role: "user" | "advogado"; oab?: string };
+export type AuthUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "user" | "advogado";
+  oab?: string;
+  phone?: string;
+  verificationStatus?: VerificationStatus;
+  onboardingStep?: string;
+};
+
+async function passwordMatches(stored: string, plain: string): Promise<boolean> {
+  if (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$")) {
+    return verifyPassword(plain, stored);
+  }
+  // Legacy plain demo hashes in DB / smoke
+  return stored === plain;
+}
 
 export async function getUserForAuth(email: string, password: string): Promise<AuthUser | null> {
   if (db) {
     try {
       const rows = await db.select().from(schema.users).where(eq(schema.users.email, email.toLowerCase())).limit(1);
       const u = rows[0];
-      if (u && u.passwordHash === password) {
-        return { id: u.id, name: u.name, email: u.email, role: u.role as AuthUser["role"], oab: u.oab ?? undefined };
+      if (u && (await passwordMatches(u.passwordHash, password))) {
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role as AuthUser["role"],
+          oab: u.oab ?? undefined,
+          phone: u.phone ?? undefined,
+          verificationStatus: (u.verificationStatus as VerificationStatus) ?? "nao_verificado",
+          onboardingStep: u.onboardingStep ?? "dados",
+        };
       }
       if (u) return null; // found but wrong password
       // fall through to demo if not found in DB
@@ -37,8 +65,38 @@ export async function getUserForAuth(email: string, password: string): Promise<A
       // DB unreachable → demo fallback
     }
   }
+  // In-memory users from POST /api/register (bcrypt hashes)
+  try {
+    const { findMemoryUserByEmail } = await import("@/lib/register");
+    const mem = findMemoryUserByEmail(email);
+    if (mem && (await passwordMatches(mem.passwordHash, password))) {
+      return {
+        id: mem.id,
+        name: mem.name,
+        email: mem.email,
+        role: "user",
+        phone: mem.phone,
+        verificationStatus: mem.verificationStatus,
+        onboardingStep: mem.onboardingStep,
+      };
+    }
+    if (mem) return null;
+  } catch {
+    // register module unavailable
+  }
+
   const demo: DemoUser | null = verifyDemo(email, password);
-  return demo ? { id: demo.id, name: demo.name, email: demo.email, role: demo.role, oab: demo.oab } : null;
+  return demo
+    ? {
+        id: demo.id,
+        name: demo.name,
+        email: demo.email,
+        role: demo.role,
+        oab: demo.oab,
+        verificationStatus: "nao_verificado",
+        onboardingStep: "dados",
+      }
+    : null;
 }
 
 export type Dashboard = { dividas: Divida[]; prazos: Prazo[]; docs: Doc[]; reclamacoes: Reclamacao[] };
@@ -100,7 +158,7 @@ export async function getCases(): Promise<Caso[]> {
   }
 }
 
-/** Stripe: record a checkout as a subscription/package purchase for a user. */
+/** Record a checkout as a subscription/package purchase (AbacatePay primary; Stripe legacy). */
 export async function recordSubscription(input: {
   email: string;
   plan: "assinatura" | "pacote";
@@ -108,10 +166,17 @@ export async function recordSubscription(input: {
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   stripeCheckoutSessionId?: string;
+  abacateCustomerId?: string;
+  abacateBillingId?: string;
+  abacateCheckoutId?: string;
 }): Promise<void> {
   if (!db) return;
   try {
-    const users = await db.select().from(schema.users).where(eq(schema.users.email, input.email.toLowerCase())).limit(1);
+    const users = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, input.email.toLowerCase()))
+      .limit(1);
     const uid = users[0]?.id;
     if (!uid) return;
     await db.insert(schema.subscriptions).values({
@@ -121,8 +186,101 @@ export async function recordSubscription(input: {
       stripeCustomerId: input.stripeCustomerId,
       stripeSubscriptionId: input.stripeSubscriptionId,
       stripeCheckoutSessionId: input.stripeCheckoutSessionId,
+      abacateCustomerId: input.abacateCustomerId,
+      abacateBillingId: input.abacateBillingId,
+      abacateCheckoutId: input.abacateCheckoutId,
     });
   } catch {
     // best-effort
+  }
+}
+
+/** Idempotent payment webhook events. Returns false if already processed. */
+export async function claimPaymentEvent(input: {
+  id: string;
+  provider?: string;
+  type: string;
+  payload?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (!db) return true;
+  try {
+    await db.insert(schema.paymentEvents).values({
+      id: input.id,
+      provider: input.provider ?? "abacatepay",
+      type: input.type,
+      payload: input.payload ?? null,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Alias for webhook routes — returns "new" | "duplicate". */
+export async function recordPaymentEvent(input: {
+  id: string;
+  provider?: string;
+  type: string;
+  payload?: unknown;
+}): Promise<"new" | "duplicate"> {
+  const ok = await claimPaymentEvent({
+    id: input.id,
+    provider: input.provider,
+    type: input.type,
+    payload:
+      input.payload && typeof input.payload === "object"
+        ? (input.payload as Record<string, unknown>)
+        : undefined,
+  });
+  return ok ? "new" : "duplicate";
+}
+
+export type RegisterUserInput = {
+  name: string;
+  email: string;
+  passwordHash: string;
+  phone?: string;
+  cpf?: string;
+};
+
+export async function createUser(input: RegisterUserInput): Promise<string | null> {
+  if (!db) return null;
+  try {
+    const id = `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    await db.insert(schema.users).values({
+      id,
+      name: input.name,
+      email: input.email.toLowerCase(),
+      passwordHash: input.passwordHash,
+      role: "user",
+      phone: input.phone,
+      cpf: input.cpf,
+      verificationStatus: "nao_verificado",
+      onboardingStep: "dados",
+    });
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+export async function updateUserProfile(
+  email: string,
+  patch: { onboardingStep?: string; phone?: string; verificationStatus?: VerificationStatus },
+): Promise<boolean> {
+  if (!db) return false;
+  try {
+    await db
+      .update(schema.users)
+      .set({
+        ...(patch.onboardingStep ? { onboardingStep: patch.onboardingStep } : {}),
+        ...(patch.phone ? { phone: patch.phone } : {}),
+        ...(patch.verificationStatus ? { verificationStatus: patch.verificationStatus } : {}),
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.users.email, email.toLowerCase()));
+    return true;
+  } catch {
+    return false;
   }
 }

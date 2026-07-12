@@ -178,6 +178,13 @@ export default function Login() {
           </button>
         </div>
 
+        <p style={{ textAlign: "center", margin: "18px 0 0", fontSize: 13.5, color: "#54627F" }}>
+          Ainda não tem conta?{" "}
+          <a href="/cadastro" style={{ color: "#0E8A8A", fontWeight: 800, textDecoration: "none" }}>
+            Criar conta
+          </a>
+        </p>
+
         <button
           onClick={() => router.push("/")}
           style={{
@@ -185,7 +192,7 @@ export default function Login() {
             display: "flex",
             alignItems: "center",
             gap: 6,
-            margin: "20px auto 0",
+            margin: "16px auto 0",
             fontSize: 13,
             fontWeight: 700,
             cursor: "pointer",

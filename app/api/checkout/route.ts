@@ -1,12 +1,19 @@
 import { auth } from "@/auth";
-import { stripe, PLANS, type PlanKey } from "@/lib/stripe";
+import { createCheckout, hasAbacatePay, type PlanKey } from "@/lib/abacatepay";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/**
+ * AbacatePay checkout:
+ * - assinatura → R$ 99/mês (subscription checkout)
+ * - pacote → R$ 149 one-time (PIX + CARD)
+ */
 export async function POST(req: Request) {
-  // Not configured yet → 503 so the client falls back gracefully.
-  if (!stripe) return Response.json({ error: "stripe-not-configured" }, { status: 503 });
+  // Not configured yet → 503 so the client falls back gracefully (login).
+  if (!hasAbacatePay) {
+    return Response.json({ error: "abacatepay-not-configured" }, { status: 503 });
+  }
 
   const session = await auth();
   if (!session?.user?.email) {
@@ -21,30 +28,21 @@ export async function POST(req: Request) {
     /* default assinatura */
   }
 
-  const cfg = PLANS[plan];
   const origin = req.headers.get("origin") ?? new URL(req.url).origin;
 
   try {
-    const checkout = await stripe.checkout.sessions.create({
-      mode: cfg.mode,
-      customer_email: session.user.email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "brl",
-            product_data: { name: cfg.label },
-            unit_amount: cfg.amount,
-            ...(cfg.mode === "subscription" ? { recurring: { interval: cfg.interval! } } : {}),
-          },
-        },
-      ],
-      metadata: { plan, email: session.user.email },
-      success_url: `${origin}/painel?checkout=success`,
-      cancel_url: `${origin}/#planos`,
+    const checkout = await createCheckout({
+      plan,
+      customerEmail: session.user.email,
+      returnUrl: `${origin}/#planos`,
+      completionUrl: `${origin}/painel?checkout=success`,
     });
-    return Response.json({ url: checkout.url });
-  } catch {
+    return Response.json({ url: checkout.url, id: checkout.id });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "checkout-failed";
+    if (msg === "not-configured") {
+      return Response.json({ error: "abacatepay-not-configured" }, { status: 503 });
+    }
     return Response.json({ error: "checkout-failed" }, { status: 502 });
   }
 }

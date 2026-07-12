@@ -15,6 +15,7 @@ export const authConfig = {
         token.role = user.role;
         token.oab = user.oab;
         token.name = user.name;
+        if (user.id) token.sub = user.id;
       }
       return token;
     },
@@ -22,6 +23,7 @@ export const authConfig = {
       if (session.user) {
         session.user.role = token.role as FenixRole | undefined;
         session.user.oab = token.oab as string | undefined;
+        if (token.sub) session.user.id = token.sub;
       }
       return session;
     },

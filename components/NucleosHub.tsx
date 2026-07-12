@@ -92,6 +92,64 @@ export default function NucleosHub() {
           Medidas jurídicas só saem com o Botão Fênix.
         </p>
 
+        <div style={{ marginBottom: 16 }}>
+          <Link
+            href="/nucleos/cnh"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 16px",
+              borderRadius: 999,
+              background: "linear-gradient(135deg,#12A5A5,#4ECDC4)",
+              color: "#0A1730",
+              fontWeight: 800,
+              fontSize: 13.5,
+              textDecoration: "none",
+            }}
+          >
+            Núcleo CNH / Trânsito →
+          </Link>
+          <Link
+            href="/kyc"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginLeft: 10,
+              padding: "10px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(19,35,63,.12)",
+              background: "#fff",
+              color: "#0C1D3E",
+              fontWeight: 700,
+              fontSize: 13.5,
+              textDecoration: "none",
+            }}
+          >
+            KYC / Verificação facial
+          </Link>
+          <Link
+            href="/cadastro"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              marginLeft: 10,
+              padding: "10px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(19,35,63,.12)",
+              background: "#fff",
+              color: "#0C1D3E",
+              fontWeight: 700,
+              fontSize: 13.5,
+              textDecoration: "none",
+            }}
+          >
+            Cadastro
+          </Link>
+        </div>
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           {TABS.map((t) => (
             <button
@@ -266,29 +324,10 @@ export default function NucleosHub() {
           <div style={{ ...card, minHeight: 320, overflow: "auto" }}>
             <h3 className="font-display" style={{ margin: "0 0 12px", fontSize: 18 }}>Resultado</h3>
             {!out && !loading && (
-              <p style={{ color: "#657493", fontSize: 14 }}>Execute um núcleo à esquerda para ver o JSON estruturado (faixa, passos, auditoria).</p>
+              <p style={{ color: "#657493", fontSize: 14 }}>Execute um núcleo à esquerda para ver o resultado (faixa, minuta, passos e auditoria).</p>
             )}
             {loading && <p style={{ color: "#0C6E6E", fontWeight: 700 }}>Processando…</p>}
-            {out != null && (
-              <pre
-                style={{
-                  margin: 0,
-                  fontSize: 11.5,
-                  lineHeight: 1.45,
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  color: "#3E4E6C",
-                  background: "#F5F7FB",
-                  borderRadius: 12,
-                  padding: 14,
-                  maxHeight: 520,
-                  overflow: "auto",
-                }}
-              >
-                {JSON.stringify(out, null, 2)}
-              </pre>
-            )}
+            {out != null && <AgentResult data={out} />}
           </div>
         </div>
 
@@ -358,5 +397,230 @@ function Field({
         <input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={style} />
       )}
     </div>
+  );
+}
+
+// ---- Resultado estruturado (todos os núcleos compartilham AgentResultBase) ----
+
+type Band = "verde" | "amarela" | "vermelha";
+
+const BAND_STYLE: Record<Band, { bg: string; fg: string; label: string }> = {
+  verde: { bg: "#E3F5F0", fg: "#0F7A6B", label: "faixa verde · automação ampla" },
+  amarela: { bg: "#FCF1DA", fg: "#9A6B12", label: "faixa amarela · revisão do advogado" },
+  vermelha: { bg: "#FBE6DE", fg: "#C2451F", label: "faixa vermelha · prioridade humana" },
+};
+
+// Rótulos PT-BR para arrays conhecidos, na ordem de exibição preferida.
+const LIST_LABELS: Record<string, string> = {
+  minutaSecoes: "Seções",
+  checklist: "Checklist de documentos",
+  camposFaltantes: "Campos faltantes",
+  nextSteps: "Próximos passos",
+  publicChannels: "Canais públicos",
+  fontes: "Fontes",
+};
+
+// Campos com tratamento próprio — não caem no fallback genérico.
+const HANDLED = new Set([
+  "band",
+  "titulo",
+  "summary",
+  "minuta",
+  "audit",
+  "confidence",
+  "confiancaIA",
+  "kind",
+  ...Object.keys(LIST_LABELS),
+]);
+
+const FIELD_LABELS: Record<string, string> = {
+  kind: "Tipo",
+  confidence: "Confiança",
+  confiancaIA: "Confiança da IA",
+};
+
+function humanize(key: string) {
+  return key
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/^\w/, (c) => c.toUpperCase());
+}
+
+function fmtDate(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+const sectionTitle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 800,
+  color: "#54627F",
+  textTransform: "uppercase",
+  letterSpacing: ".04em",
+  margin: "0 0 6px",
+};
+
+function List({ label, items }: { label: string; items: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <div style={{ marginTop: 14 }}>
+      <p style={sectionTitle}>{label}</p>
+      <ul style={{ margin: 0, paddingLeft: 18, color: "#3E4E6C", fontSize: 13.5, lineHeight: 1.55 }}>
+        {items.map((it, i) => (
+          <li key={i}>{it}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function AgentResult({ data }: { data: unknown }) {
+  // Formas inesperadas (não-objeto) caem direto no JSON.
+  if (data == null || typeof data !== "object" || Array.isArray(data)) {
+    return <RawJson data={data} open />;
+  }
+  const o = data as Record<string, unknown>;
+  const band = (["verde", "amarela", "vermelha"] as const).includes(o.band as Band) ? (o.band as Band) : null;
+  const titulo = typeof o.titulo === "string" ? o.titulo : null;
+  const summary = typeof o.summary === "string" ? o.summary : null;
+  const minuta = typeof o.minuta === "string" ? o.minuta : null;
+  const audit = o.audit && typeof o.audit === "object" ? (o.audit as Record<string, unknown>) : null;
+
+  // Campos extras não mapeados, renderizados genericamente por tipo.
+  const extras = Object.entries(o).filter(([k, v]) => !HANDLED.has(k) && v != null);
+
+  return (
+    <div>
+      {band && (
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            fontSize: 11.5,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: ".04em",
+            borderRadius: 999,
+            padding: "5px 12px",
+            background: BAND_STYLE[band].bg,
+            color: BAND_STYLE[band].fg,
+          }}
+        >
+          {BAND_STYLE[band].label}
+        </span>
+      )}
+
+      {titulo && (
+        <h4 className="font-display" style={{ margin: "12px 0 4px", fontSize: 17, color: "#13233F" }}>
+          {titulo}
+        </h4>
+      )}
+      {summary && <p style={{ margin: "0 0 4px", fontSize: 13.5, color: "#54627F", lineHeight: 1.55 }}>{summary}</p>}
+
+      {minuta && (
+        <div style={{ marginTop: 14 }}>
+          <p style={sectionTitle}>Minuta (rascunho)</p>
+          <div
+            style={{
+              whiteSpace: "pre-wrap",
+              wordBreak: "break-word",
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: 13.5,
+              lineHeight: 1.6,
+              color: "#26324A",
+              background: "#fff",
+              border: "1px solid rgba(19,35,63,.1)",
+              borderRadius: 12,
+              padding: 16,
+              maxHeight: 420,
+              overflow: "auto",
+            }}
+          >
+            {minuta}
+          </div>
+        </div>
+      )}
+
+      {/* Listas conhecidas, na ordem definida em LIST_LABELS. */}
+      {Object.entries(LIST_LABELS).map(([key, label]) =>
+        Array.isArray(o[key]) && (o[key] as unknown[]).every((x) => typeof x === "string") ? (
+          <List key={key} label={label} items={o[key] as string[]} />
+        ) : null,
+      )}
+
+      {/* Campos extras genéricos (outras abas / futuros agentes). */}
+      {extras.map(([key, val]) => {
+        if (Array.isArray(val) && val.every((x) => typeof x === "string")) {
+          return <List key={key} label={humanize(key)} items={val as string[]} />;
+        }
+        if (typeof val === "string" && val.includes("\n")) {
+          return (
+            <div key={key} style={{ marginTop: 14 }}>
+              <p style={sectionTitle}>{humanize(key)}</p>
+              <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 13, color: "#3E4E6C", lineHeight: 1.55 }}>{val}</div>
+            </div>
+          );
+        }
+        if (typeof val === "string" || typeof val === "number" || typeof val === "boolean") {
+          return (
+            <p key={key} style={{ margin: "8px 0 0", fontSize: 13, color: "#3E4E6C" }}>
+              <strong style={{ color: "#54627F" }}>{FIELD_LABELS[key] ?? humanize(key)}:</strong> {String(val)}
+            </p>
+          );
+        }
+        // Objetos/arrays complexos inesperados: mostrar como JSON compacto.
+        return (
+          <div key={key} style={{ marginTop: 14 }}>
+            <p style={sectionTitle}>{humanize(key)}</p>
+            <pre style={{ margin: 0, fontSize: 11.5, whiteSpace: "pre-wrap", wordBreak: "break-word", color: "#3E4E6C" }}>
+              {JSON.stringify(val, null, 2)}
+            </pre>
+          </div>
+        );
+      })}
+
+      {audit && (
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(19,35,63,.08)", fontSize: 12, color: "#657493", lineHeight: 1.6 }}>
+          <p style={{ margin: 0 }}>
+            <strong style={{ color: "#54627F" }}>Auditoria:</strong>{" "}
+            {[typeof audit.agent === "string" ? audit.agent : null, typeof audit.version === "string" ? `v${audit.version}` : null, typeof audit.at === "string" ? fmtDate(audit.at) : null]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {audit.requiresLawyerReview === true && (
+            <p style={{ margin: "2px 0 0", color: "#9A6B12", fontWeight: 700 }}>Requer revisão de advogado antes de qualquer medida.</p>
+          )}
+        </div>
+      )}
+
+      <RawJson data={data} />
+    </div>
+  );
+}
+
+function RawJson({ data, open }: { data: unknown; open?: boolean }) {
+  return (
+    <details open={open} style={{ marginTop: 16 }}>
+      <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#657493" }}>Ver JSON completo</summary>
+      <pre
+        style={{
+          margin: "8px 0 0",
+          fontSize: 11.5,
+          lineHeight: 1.45,
+          whiteSpace: "pre-wrap",
+          wordBreak: "break-word",
+          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+          color: "#3E4E6C",
+          background: "#F5F7FB",
+          borderRadius: 12,
+          padding: 14,
+          maxHeight: 520,
+          overflow: "auto",
+        }}
+      >
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    </details>
   );
 }

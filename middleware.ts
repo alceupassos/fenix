@@ -29,5 +29,11 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/painel/:path*", "/advogado/:path*", "/nucleos/:path*"],
+  matcher: [
+    "/painel/:path*",
+    "/advogado/:path*",
+    "/nucleos/:path*",
+    "/onboarding/:path*",
+    "/kyc/:path*",
+  ],
 };

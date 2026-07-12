@@ -31,3 +31,10 @@ yarn-error.log*
 
 # claude local settings (personal)
 .claude/settings.local.json
+
+.data/
+
+.agents/
+.claude/
+skills-lock.json
+

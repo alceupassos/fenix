@@ -5,6 +5,13 @@
 import { runFarol } from "../lib/agents/farol";
 import { runAtlas, parseBRL } from "../lib/agents/atlas";
 import { runIris } from "../lib/agents/iris";
+import {
+  runDocCheck,
+  isValidCpf,
+  isValidCnpj,
+  computeFraudScore,
+} from "../lib/agents/doccheck";
+import { mockSampleForHint } from "../lib/ocr/provider";
 import { runAcordo } from "../lib/agents/acordo";
 import { runOficina } from "../lib/agents/oficina";
 import { runPonte } from "../lib/agents/ponte";
@@ -13,6 +20,7 @@ import { runAurora } from "../lib/agents/aurora";
 import { runDefensor } from "../lib/agents/defensor";
 import { runSuperendividamento } from "../lib/agents/superendividamento";
 import { runEscudo } from "../lib/agents/escudo";
+import { runCnh } from "../lib/agents/cnh";
 import { applyFenixButton, listFenixDecisions } from "../lib/fenix-button";
 import { appendAudit, listAudit, clearAuditForTests } from "../lib/audit";
 
@@ -75,6 +83,57 @@ assert(iris.extracted.numeroProcesso.provenance === "confirmed", "Íris CNJ conf
 assert((iris.extracted.valores.length ?? 0) >= 1, "Íris extrai valor");
 assert(iris.band === "amarela", "Íris citação → amarela");
 assert(!iris.summary.toLowerCase().includes("vamos ganhar"), "Íris sem promessa");
+
+// DocCheck + CPF/CNPJ validators
+assert(isValidCpf("529.982.247-25") === true, "isValidCpf dígitos ok");
+assert(isValidCpf("111.111.111-11") === false, "isValidCpf rejeita repetidos");
+assert(isValidCnpj("11.444.777/0001-61") === true, "isValidCnpj dígitos ok");
+assert(isValidCnpj("00.000.000/0000-00") === false, "isValidCnpj rejeita zeros");
+
+const cnhText = mockSampleForHint("cnh-marina.pdf");
+const dcCnh = runDocCheck({
+  text: cnhText,
+  kind: "cnh",
+  cadastro: {
+    nome: "Marina Oliveira Santos",
+    cpf: "529.982.247-25",
+    dataNascimento: "15/03/1990",
+  },
+  fileName: "cnh-marina.pdf",
+});
+assert(dcCnh.campos.numeroRegistro?.value != null, "DocCheck CNH extrai registro");
+assert(dcCnh.campos.categoria?.value === "B", "DocCheck CNH categoria B");
+assert(dcCnh.crossCheck.cpfMatch === true, "DocCheck CNH cpfMatch");
+assert(dcCnh.crossCheck.nomeMatch === true, "DocCheck CNH nomeMatch");
+assert(dcCnh.fraudScore < 40, "DocCheck CNH fraudScore baixo");
+assert(dcCnh.band === "verde" || dcCnh.band === "amarela", "DocCheck CNH não vermelha");
+assert(dcCnh.audit.agent === "doccheck", "DocCheck audit agent");
+assert(dcCnh.publicChannels.some((c) => /Receita|gov\.br|DETRAN/i.test(c)), "DocCheck canais públicos");
+
+const dcMismatch = runDocCheck({
+  text: cnhText,
+  kind: "cnh",
+  cadastro: { nome: "Fulano de Tal Completamente Diferente", cpf: "390.533.447-05" },
+});
+assert(dcMismatch.crossCheck.cpfMatch === false, "DocCheck mismatch CPF");
+assert(dcMismatch.band === "vermelha" || dcMismatch.fraudScore >= 30, "DocCheck mismatch → risco");
+assert(dcMismatch.audit.requiresLawyerReview === true, "DocCheck mismatch → advogado");
+
+const dcBadCpf = runDocCheck({
+  text: "NOME: TESTE\nCPF: 111.111.111-11",
+  kind: "cpf",
+});
+assert(dcBadCpf.fraudScore >= 40, "DocCheck CPF inválido eleva fraudScore");
+assert(dcBadCpf.band !== "verde", "DocCheck CPF inválido não é verde");
+assert(
+  computeFraudScore({
+    text: "x",
+    campos: {},
+    crossCheck: { nomeMatch: null, cpfMatch: null, dataMatch: null, divergences: [] },
+    kind: "cpf",
+  }) >= 30,
+  "computeFraudScore texto curto",
+);
 
 // Acordo
 const ac = runAcordo({ debts, disponivelMes: 850, meses: 12 });
@@ -150,6 +209,44 @@ const es = runEscudo({
 });
 assert(es.alertas.length >= 2, "Escudo detecta cláusulas");
 assert(es.scoreRisco > 20, "Escudo score risco");
+
+// CNH / Trânsito
+const cnhPerda = runCnh({ service: "perda_roubo_extravio", uf: "SP" });
+assert(cnhPerda.band === "verde", "CNH perda → verde");
+assert(cnhPerda.publicChannels.some((c) => /DETRAN/i.test(c)), "CNH cita DETRAN");
+assert(cnhPerda.publicChannels.some((c) => /gov\.br/i.test(c)), "CNH cita gov.br");
+assert(cnhPerda.detranLinks.some((l) => l.url.includes("detran.sp.gov.br")), "CNH link DETRAN-SP");
+assert(cnhPerda.checklist.length >= 3, "CNH checklist perda");
+
+const cnhRec = runCnh({
+  service: "recurso_multa",
+  uf: "SP",
+  relato: "Radar em local sem sinalização clara",
+  multa: {
+    autoInfracao: "A999",
+    dataNotificacao: "01/03/2026",
+    etapa: "defesa_previa",
+    orgao: "DETRAN-SP",
+  },
+});
+assert(cnhRec.band === "amarela", "CNH recurso → amarela");
+assert(cnhRec.minutaSugerida?.requiresFenixButton === true, "CNH minuta exige Botão Fênix");
+assert(
+  /REVISÃO|Botão Fênix|ADVOGADO/i.test(cnhRec.minutaSugerida?.corpo ?? ""),
+  "CNH minuta marca revisão advogado",
+);
+assert(cnhRec.audit.requiresLawyerReview === true, "CNH recurso revisão jurídica");
+
+const cnhPontos = runCnh({ service: "consulta_pontos", uf: "RJ", pontos: 42 });
+assert(cnhPontos.band === "vermelha", "CNH pontos altos → vermelha");
+
+const cnhSusp = runCnh({
+  service: "suspensao_cassacao",
+  uf: "SP",
+  relato: "Recebi notificação de processo de cassação com prazo",
+});
+assert(cnhSusp.band === "vermelha", "CNH cassação → vermelha");
+assert(cnhSusp.documentosNecessarios.length >= 3, "CNH suspensão dossiê");
 
 // Botão Fênix + audit
 const dec = applyFenixButton({

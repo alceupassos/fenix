@@ -1,13 +1,27 @@
+/**
+ * @deprecated Stripe is no longer the primary payment provider.
+ * Use `@/lib/abacatepay` (AbacatePay: Pix + card) instead.
+ *
+ * Kept as a legacy stub so existing imports (`stripe`, `hasStripe`, `PLANS`,
+ * `PlanKey`) and the optional Stripe webhook route do not break the build.
+ * The `stripe` npm package remains in package.json until Maestro removes it.
+ */
+
 import Stripe from "stripe";
 
-/** Null-safe Stripe client. Activates when STRIPE_SECRET_KEY is set. */
+/** Always false — Stripe is retired as primary. Prefer `hasAbacatePay`. */
+export const hasStripe = false;
+
+/**
+ * Null-safe Stripe client. Still constructs if STRIPE_SECRET_KEY is set
+ * (legacy webhook only); prefer AbacatePay for new checkout flows.
+ */
 const key = process.env.STRIPE_SECRET_KEY;
 export const stripe: Stripe | null = key ? new Stripe(key) : null;
-export const hasStripe = Boolean(key);
 
 export type PlanKey = "assinatura" | "pacote";
 
-/** Pricing for the two paid Planos (values in centavos, BRL). */
+/** @deprecated Prefer `PLANS` from `@/lib/abacatepay`. */
 export const PLANS: Record<
   PlanKey,
   { label: string; amount: number; mode: "subscription" | "payment"; interval?: "month" }

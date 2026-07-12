@@ -4,9 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /**
- * Starts a Stripe Checkout for a paid plan. If Stripe isn't configured yet
- * (503) or the user isn't signed in (401), it falls back gracefully:
- * sends the user to /login (then /painel) instead of erroring.
+ * Starts an AbacatePay Checkout for a paid plan (Pix + card).
+ * If AbacatePay isn't configured yet (503) or the user isn't signed in (401),
+ * it falls back gracefully: sends the user to /login (then /painel)
+ * instead of erroring.
  */
 export default function PlanoCheckoutButton({
   plan,
@@ -41,7 +42,7 @@ export default function PlanoCheckoutButton({
           return;
         }
       }
-      // Stripe not configured yet, or any other issue → graceful fallback.
+      // AbacatePay not configured yet (503), or any other issue → graceful fallback.
       router.push("/login?callbackUrl=/painel");
     } catch {
       router.push("/login?callbackUrl=/painel");
